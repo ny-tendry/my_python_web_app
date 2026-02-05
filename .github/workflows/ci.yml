@@ -1,0 +1,21 @@
+name: build an integrate image to Dockerhub
+
+on: 
+  push: 
+    branches: [main]
+  workflow_dispatch : 
+
+jobs:
+  steps:
+    - name: checkout repository
+      uses: actions/checkout@v3
+    - name: build docker image
+      run: |
+    - name : Login to Dockerhub
+      uses: docker/login-action@v2
+      with: 
+        username: your_docker_login
+        password: token or password
+    - name: push to Docker hub
+      run: |
+        
