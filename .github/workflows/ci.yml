@@ -17,8 +17,8 @@ jobs:
       - name : Login to Dockerhub
         uses: docker/login-action@v2
         with: 
-          username: your_docker_login
-          password: token or password
+          username: nytendry7
+          password: dckr_pat_xu44y9lr1nrCWzktvjhNVMT7ja4
       - name: push to Docker hub
         run: |
           docker push nytendry7/my_python_web_app-web
