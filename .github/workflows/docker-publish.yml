@@ -1,3 +1,39 @@
+name: Build, Push and Deploy to Local VM (Self-Hosted Runner)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-push-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 1️ - Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/mon-site-flask:latest \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/mon-site-flask:${{ github.sha }} .
+
+      # 2️ - Login Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 3 - Push Docker image
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mon-site-flask:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mon-site-flask:${{ github.sha }}
+
+      # 4- Deploy locally on the VM (NO SSH)
       - name: Deploy locally on VM
         run: |
           echo "Début du déploiement local..."
@@ -8,16 +44,13 @@
           FULL_IMAGE="$DOCKERHUB_USERNAME/$IMAGE_NAME:$TAG"
           CONTAINER_NAME="flask-app"
           NETWORK_NAME="flask-network"
-
-          LOG_DIR="logs"
-          LOG_FILE="$LOG_DIR/deployment.log"
-
-          mkdir -p $LOG_DIR
-          touch $LOG_FILE
+          
 
           log_info() { echo "[INFO] $1"; }
           log_error() { echo "[ERROR] $1"; }
           log_success() { echo "[SUCCESS] $1"; }
+
+          mkdir -p /opt/flask-app
 
           log_info "Pull de la dernière image..."
           docker pull $FULL_IMAGE
@@ -52,6 +85,6 @@
           log_info "Nettoyage des images inutilisées..."
           docker image prune -af --filter "until=24h"
 
-          echo "Déployé le $(date) - Commit: ${{ github.sha }}" >> $LOG_FILE
+          echo "Déployé le $(date) - Commit: ${{ github.sha }}" >> /opt/flask-app/deployment.log
 
           log_success "Déploiement terminé avec succès"
